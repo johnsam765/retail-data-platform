@@ -1,0 +1,23 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generated data layers
+data/bronze/
+data/silver/
+data/gold/
+data/quarantine/
+
+# Spark
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
