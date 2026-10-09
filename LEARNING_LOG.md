@@ -45,3 +45,55 @@ Correct:
 
 This reinforced that successful pipeline execution does not guarantee correct
 data.
+
+## Capstone Day 2 — Silver Parsing and Initial Data Quality
+
+### Silver input
+- Silver reads the persisted Bronze Delta table.
+- Bronze business fields such as order_date and amount are intentionally stored
+  as strings so the original source values are preserved.
+
+### Safe parsing
+Created typed Silver columns:
+- parsed_order_date -> DATE
+- parsed_amount -> DECIMAL(12,2)
+
+Used try_cast so malformed values become NULL instead of failing the pipeline.
+
+Examples:
+- "2026-10-01" -> valid DATE
+- "bad-date" -> NULL
+- "500.00" -> DECIMAL 500.00
+- "abc" -> NULL
+
+### Data-quality rules
+Created rejection_reason:
+- NULL parsed_order_date -> INVALID_ORDER_DATE
+- NULL parsed_amount -> INVALID_AMOUNT
+
+Split the DataFrame into:
+- valid_df: rejection_reason IS NULL
+- quarantine_df: rejection_reason IS NOT NULL
+
+Current results:
+- O001 -> valid
+- O002 -> valid
+- O003 -> valid
+- O004 -> INVALID_ORDER_DATE
+- O005 -> INVALID_AMOUNT
+
+Cancelled is a valid business status and is not automatically a data-quality
+failure.
+
+### DataFrame lesson
+select() does not permanently remove columns from the original DataFrame.
+
+quarantine_df still contains all columns. Using:
+
+quarantine_df.select(...).show()
+
+only creates a projection for that operation/display.
+
+### Current state
+Silver and Quarantine have not yet been persisted to Delta.
+More validation rules will be added before the final write.
