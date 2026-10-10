@@ -97,3 +97,107 @@ only creates a projection for that operation/display.
 ### Current state
 Silver and Quarantine have not yet been persisted to Delta.
 More validation rules will be added before the final write.
+
+## Capstone Day 3 — Customer Join, Deduplication and Silver Persistence
+
+### Customer enrichment
+- Read the Bronze customer Delta table.
+- Customer lookup grain should be one row per customer_id.
+- Duplicate customer_id values can cause join fan-out and inflate downstream Gold aggregates.
+- Used a LEFT JOIN because Sales is the driving dataset.
+- An INNER JOIN could silently remove sales rows whose customer_id does not exist.
+
+### Customer validation
+Added a technical marker:
+
+_customer_found = 1
+
+After a LEFT JOIN:
+- matched customer -> _customer_found = 1
+- unmatched customer -> _customer_found = NULL
+
+This allows CUSTOMER_NOT_FOUND to be detected independently from a missing
+province or customer_name.
+
+### Duplicate order handling
+Used a Window:
+
+partitionBy(order_id)
+orderBy(ingestion_timestamp DESC, _row_id DESC)
+
+Added ROW_NUMBER to rank duplicate orders.
+
+- _order_rank = 1 -> preferred/current row
+- _order_rank > 1 -> DUPLICATE_ORDER_ID
+
+ingestion_timestamp is the primary ordering field.
+_row_id is currently a technical tie-breaker only.
+
+A proper production source would ideally provide:
+- updated_at
+- event timestamp
+- sequence number
+- source version
+- Kafka offset / CDC sequence
+
+### Validation priority
+Current primary rejection priority:
+
+1. DUPLICATE_ORDER_ID
+2. INVALID_ORDER_DATE
+3. INVALID_AMOUNT
+4. CUSTOMER_NOT_FOUND
+
+Because chained when() conditions return the first match, a row with multiple
+problems currently stores only one primary rejection reason.
+
+### Final Silver
+Persisted valid records to Silver Delta using trusted business columns.
+
+Current Silver:
+- O001
+- O002
+- O003
+
+O003 is Cancelled but is still valid Silver data.
+
+### Quarantine
+Persisted rejected records to Quarantine Delta while preserving:
+- original raw values
+- parsed values
+- customer enrichment
+- rejection reason
+- pipeline lineage metadata
+
+Current Quarantine:
+- O004 -> INVALID_ORDER_DATE
+- O005 -> INVALID_AMOUNT
+
+### Reconciliation
+Current counts:
+
+Bronze Sales = 5
+Silver = 3
+Quarantine = 2
+
+3 + 2 = 5
+
+Reconciliation checks whether all incoming records were accounted for.
+
+It can help identify:
+- silently dropped rows
+- accidental duplication
+- join fan-out
+- incorrect filters
+- records that were never classified
+
+### Reconciliation vs Audit
+Reconciliation answers:
+
+"Does the data balance?"
+
+Audit answers:
+
+"What happened during this pipeline run?"
+
+The reconciliation result can later be stored as one field in the audit record.

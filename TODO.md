@@ -25,3 +25,34 @@ After that:
 - duplicate order detection
 - final Silver/Quarantine Delta writes
 - reconciliation checks
+
+## Next Session — Gold and Pipeline Reconciliation
+
+### Main build
+- Turn the row-count reconciliation into actual pipeline logic
+- Fail the pipeline when Bronze != Silver + Quarantine
+- Build the Gold sales summary
+- Include only Completed sales
+- Group by province
+- Calculate:
+  - completed order count
+  - total sales amount
+  - average sales amount
+
+### Spark learning
+- Understand why groupBy causes a shuffle
+- Inspect the Gold execution plan
+- Connect shuffle partitions to stages and tasks
+
+### Reliability
+- Read Silver and Quarantine from persisted Delta tables
+- Verify persisted counts
+- Begin designing the pipeline audit record
+
+### Upcoming
+- Audit SUCCESS / FAILED
+- exception handling
+- pipeline_run_id based auditing
+- idempotency and input fingerprinting
+- incremental processing
+- Delta MERGE
