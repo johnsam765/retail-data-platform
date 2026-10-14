@@ -2,6 +2,7 @@ from spark_session import create_spark_session
 from pathlib import Path
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
+from audit_pipeline import write_audit_record
 
 ROOT=Path(__file__).resolve().parent.parent
 SALES_BRONZE_PATH=ROOT/"data"/"bronze"/"sales"
@@ -78,8 +79,41 @@ def run_silver(spark):
     quarantine_final_df.show(truncate=False)
 
     print("\nCOUNTS:")
-    print("Silver:", silver_final_df.count())
-    print("Quarantine:", quarantine_final_df.count())
+    bronze_count = sales_df.count()
+    silver_count = silver_final_df.count()
+    quarantine_count = quarantine_final_df.count()
+
+    processed_count = silver_count + quarantine_count
+    reconciliation_passed = (bronze_count == processed_count)
+    status = (
+    "SILVER_SUCCESS"
+    if reconciliation_passed
+    else "SILVER_FAILED"
+)
+    run_ids = (
+    sales_df
+    .select("pipeline_run_id")
+    .distinct()
+    .limit(2)
+    .collect()
+)
+    if len(run_ids) != 1:
+        raise RuntimeError("Expected exactly one Bronze pipeline_run_id")
+    pipeline_run_id = run_ids[0]["pipeline_run_id"]
+    write_audit_record(
+    spark=spark,
+    pipeline_run_id=pipeline_run_id,
+    bronze_count=bronze_count,
+    silver_count=silver_count,
+    quarantine_count=quarantine_count,
+    reconciliation_passed=reconciliation_passed,
+    status=status
+)
+    if not reconciliation_passed:
+        raise RuntimeError(f"Reconciliation failed: Bronze={bronze_count}, "
+        f"Silver={silver_count}, "
+        f"Quarantine={quarantine_count}")
+    print("RECONCILIATION PASSED")
 
 def load_bronze_data(spark,path):
     return spark.read.format("delta").load(str(path))

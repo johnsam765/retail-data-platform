@@ -56,3 +56,23 @@ After that:
 - idempotency and input fingerprinting
 - incremental processing
 - Delta MERGE
+
+## Next — Reliability and Pipeline Orchestration
+
+- Create main pipeline orchestrator
+- Connect Bronze, Silver and Gold execution
+- Pass pipeline_run_id consistently across stages
+- Centralize SUCCESS/FAILED auditing
+- Capture failed_stage and error_message
+- Add try/except/finally handling
+- Ensure Spark sessions close on failure
+- Handle audit write failures
+- Add automated reconciliation tests
+- Prevent duplicate audit records on reruns
+
+## Following
+- Idempotency
+- Input fingerprinting
+- Incremental processing
+- Delta MERGE
+- Spark performance optimization

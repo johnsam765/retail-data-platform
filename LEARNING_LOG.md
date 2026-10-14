@@ -201,3 +201,36 @@ Audit answers:
 "What happened during this pipeline run?"
 
 The reconciliation result can later be stored as one field in the audit record.
+
+## Day 4 — October 13, 2026
+
+### Implemented
+- Enforced Bronze = Silver + Quarantine reconciliation.
+- Built Gold province_sales aggregation.
+- Filtered Completed orders.
+- Calculated count, sum and average by province.
+- Persisted Gold as Delta.
+- Created audit_pipeline.py.
+- Added SILVER_SUCCESS / SILVER_FAILED status.
+- Recorded run ID, counts, timestamp and reconciliation result.
+
+### Spark execution concepts
+- Filter and Project are narrow transformations.
+- groupBy requires a shuffle.
+- Partial HashAggregate reduces data before shuffle.
+- Exchange represents shuffle.
+- Final HashAggregate combines partial results.
+- Understood filter pushdown, column pruning and AQE.
+
+### Production design
+- A failed pipeline must still generate an audit record.
+- Centralized orchestration can capture exceptions from every stage.
+- Exceptions should be re-raised after auditing.
+- Audit append preserves historical executions.
+
+### Verified
+Bronze = 5
+Silver = 3
+Quarantine = 2
+Gold = 2 province groups
+Reconciliation = PASSED
