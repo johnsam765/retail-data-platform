@@ -31,9 +31,19 @@ def run_gold(spark):
     print("\nGOLD PROVINCE SALES:")
     grouped_by_province.explain("formatted")
     grouped_by_province.show(truncate=False)
+    gold_count = (
+    spark.read
+    .format("delta")
+    .load(str(GOLD_DATA))
+    .count())
 
+    return {
+        "gold_count": gold_count
+    }
 
 if __name__=="__main__":
-    spark=create_spark_session()
-    run_gold(spark)
-    spark.stop()
+    spark = create_spark_session()
+    try:
+        run_gold(spark)
+    finally:
+        spark.stop()

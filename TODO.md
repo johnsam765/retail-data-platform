@@ -76,3 +76,22 @@ After that:
 - Incremental processing
 - Delta MERGE
 - Spark performance optimization
+
+## Next Session — Production Reliability
+
+- Add automated orchestrator tests using mocked stages.
+- Test success, Silver failure, Gold failure and audit failure.
+- Implement run-scoped Bronze processing.
+- Complete source_batch_id migration.
+- Introduce idempotent audit persistence using Delta MERGE.
+- Add activity/stage attempt tracking.
+- Design safe Gold-only retries.
+- Improve exception logging and recovery.
+
+## Later
+- Incremental data loading and source fingerprints.
+- Delta MERGE for Silver.
+- Spark optimization.
+- Airflow orchestration.
+- ADF, ADLS Gen2 and Databricks hands-on UI.
+- Kafka and Structured Streaming.

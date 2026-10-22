@@ -234,3 +234,38 @@ Silver = 3
 Quarantine = 2
 Gold = 2 province groups
 Reconciliation = PASSED
+
+## Session 5 — October 21, 2026
+### Pipeline Orchestration and Centralized Auditing
+
+Implemented:
+- Industry-standard pipeline_run_id generation using UUID.
+- Source batch identification with legacy Bronze compatibility.
+- Refactored Silver and Gold to return processing results.
+- Created pipeline_orchestrator.py.
+- Implemented centralized try/except/else/finally.
+- Created pipeline-level Delta audit with an explicit schema.
+- Captured pipeline status, failed stage, error details and counts.
+
+Verified:
+- Successful Silver-to-Gold execution.
+- Failed execution caused by a NameError.
+- Controlled GOLD failure using SIMULATE_GOLD_FAILURE.
+- All three executions recorded in audit history.
+- Failed GOLD execution recorded silver_count=3 and gold_count=NULL.
+
+Key learning:
+- except catches exceptions.
+- raise propagates failures to the caller.
+- else executes after successful try completion.
+- finally handles cleanup.
+- Failed audit writes must not be confused with processing failures.
+- Retryable audit writes must be idempotent.
+- NULL and zero have different meanings in audit metrics.
+
+Production limitations:
+- Bronze still uses legacy pipeline_run_id as source batch identifier.
+- Silver currently processes all Bronze records.
+- Silver, Quarantine and Gold writes are not one atomic transaction.
+- Audit append can create duplicates on retries.
+- Automated recovery and fault-tolerant auditing are not yet implemented.
